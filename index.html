@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="color-scheme" content="only light" />
   <title>PropertyHunt · Imóveis em Indaiatuba</title>
   <meta name="description" content="Imóveis à venda e para alugar em Indaiatuba, reunidos de várias imobiliárias." />
   <link rel="stylesheet" href="./assets/style.css" />
@@ -20,7 +21,7 @@
           <p class="sub" id="resumo">Carregando imóveis…</p>
         </div>
       </div>
-      <div class="topo-extra"><nav class="abas-topo" aria-label="Seções"><a href="./index.html" class="ativa" aria-current="page">Imóveis</a><a href="./historico.html">Histórico</a></nav><div class="carimbos"><span>Site gerado em <b>14/10/2026 14:23</b></span><span>Última coleta: <b>14/10/2026 13:14</b></span></div></div>
+      <div class="topo-extra"><nav class="abas-topo" aria-label="Seções"><a href="./index.html" class="ativa" aria-current="page">Imóveis</a><a href="./historico.html">Histórico</a></nav><div class="carimbos"><span>Site gerado em <b>14/10/2026 16:14</b></span><span>Última coleta: <b>14/10/2026 13:14</b></span></div></div>
     </div>
   </header>
 
@@ -37,76 +38,80 @@
           <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="search" id="f-texto" placeholder="Buscar bairro, rua, título…" autocomplete="off" enterkeyhint="search" />
         </label>
-        <button type="button" class="btn-filtros" id="abrir-filtros" aria-controls="painel" aria-expanded="false">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-          <span>Filtros</span><span class="contador" id="n-filtros" hidden>0</span>
-        </button>
       </div>
       <div class="wrap">
         <div class="chips" id="f-tipos" role="group" aria-label="Tipo de imóvel"></div>
       </div>
     </div>
 
-    <div class="fundo" id="fundo" hidden></div>
-    <aside class="painel" id="painel" aria-label="Filtros" aria-hidden="true">
-      <div class="painel-topo">
-        <h2>Filtros</h2>
-        <button type="button" class="fechar" id="fechar-filtros" aria-label="Fechar filtros">✕</button>
-      </div>
-      <div class="painel-corpo">
-        <label class="campo">
-          <span>Ordenar por</span>
-          <select id="f-ordem">
-            <option value="preco-asc" selected>Menor preço</option>
-            <option value="recentes">Mais recentes</option>
-            <option value="preco-desc">Maior preço</option>
-          </select>
-        </label>
-        <div class="campo-duplo">
-          <label class="campo">
-            <span>Preço mínimo</span>
-            <input type="number" id="f-min" min="0" step="10000" inputmode="numeric" placeholder="R$" />
-          </label>
-          <label class="campo">
-            <span>Preço máximo</span>
-            <input type="number" id="f-max" min="0" step="10000" inputmode="numeric" placeholder="R$" />
+    <div class="wrap layout">
+      <div class="fundo" id="fundo" hidden></div>
+      <aside class="painel" id="painel" aria-label="Filtros">
+        <div class="painel-topo">
+          <h2>Filtros</h2>
+          <button type="button" class="fechar" id="fechar-filtros" aria-label="Fechar filtros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div class="painel-corpo">
+          <section class="grupo">
+            <h3>Preço</h3>
+            <div class="opcoes" id="f-faixas" role="group" aria-label="Faixas de preço"></div>
+            <div class="campo-duplo">
+              <label class="campo"><span>Mínimo (R$)</span><input type="text" id="f-min" inputmode="numeric" autocomplete="off" placeholder="0" /></label>
+              <label class="campo"><span>Máximo (R$)</span><input type="text" id="f-max" inputmode="numeric" autocomplete="off" placeholder="Sem limite" /></label>
+            </div>
+          </section>
+          <section class="grupo" id="grupo-quartos">
+            <h3>Quartos</h3>
+            <div class="opcoes" id="f-quartos" role="group" aria-label="Quartos"></div>
+          </section>
+          <section class="grupo">
+            <h3>Localização</h3>
+            <label class="campo"><span>Cidade</span><select id="f-cidade"><option value="">Todas as cidades</option></select></label>
+            <label class="campo"><span>Bairro</span><input type="text" id="f-bairro" list="dl-bairros" autocomplete="off" placeholder="Ex.: Jardim Morada do Sol" /></label>
+            <datalist id="dl-bairros"></datalist>
+          </section>
+          <section class="grupo">
+            <h3>Imobiliárias</h3>
+            <div class="opcoes" id="f-agencias" role="group" aria-label="Imobiliárias"></div>
+          </section>
+          <section class="grupo">
+            <h3>Ordenar por</h3>
+            <div class="opcoes" id="f-ordens" role="radiogroup" aria-label="Ordenar"></div>
+          </section>
+          <label class="alternar">
+            <input type="checkbox" id="f-indisp" />
+            <span class="alternar-trilho" aria-hidden="true"></span>
+            <span class="alternar-texto">Mostrar indisponíveis<small>Vendidos, alugados, reservados e anúncios que sumiram do site</small></span>
           </label>
         </div>
-        <label class="campo">
-          <span>Cidade</span>
-          <select id="f-cidade"><option value="">Todas as cidades</option></select>
-        </label>
-        <label class="campo">
-          <span>Imobiliária / portal</span>
-          <select id="f-source"><option value="">Todas</option></select>
-        </label>
-        <label class="alternar">
-          <input type="checkbox" id="f-indisp" />
-          <span class="alternar-trilho" aria-hidden="true"></span>
-          <span class="alternar-texto">Mostrar indisponíveis<small>Vendidos, alugados, reservados e anúncios que sumiram do site</small></span>
-        </label>
-      </div>
-      <div class="painel-rodape">
-        <button type="button" class="btn-sec" id="f-limpar">Limpar filtros</button>
-        <button type="button" class="btn-pri" id="ver-resultados">Ver imóveis</button>
-      </div>
-    </aside>
+        <div class="painel-rodape">
+          <button type="button" class="btn-sec" id="f-limpar">Limpar</button>
+          <button type="button" class="btn-pri" id="ver-resultados">Ver imóveis</button>
+        </div>
+      </aside>
+
+      <main class="conteudo" id="conteudo">
+        <div class="pills" id="pills" aria-label="Filtros ativos"></div>
+        <p class="contagem" id="contagem" aria-live="polite"></p>
+        <ul class="grade" id="lista"></ul>
+        <div class="vazio" id="vazio" hidden>
+          <div class="vazio-icone" aria-hidden="true">🔍</div>
+          <h2>Nenhum imóvel encontrado</h2>
+          <p>Tente remover alguns filtros ou buscar por outro bairro.</p>
+          <button type="button" class="btn-pri" id="vazio-limpar">Limpar filtros</button>
+        </div>
+        <div class="mais">
+          <button type="button" class="btn-sec" id="carregar-mais" hidden>Carregar mais</button>
+          <div id="sentinela" aria-hidden="true"></div>
+        </div>
+      </main>
+    </div>
   </form>
 
-  <main class="wrap conteudo">
-    <p class="contagem" id="contagem" aria-live="polite"></p>
-    <ul class="grade" id="lista"></ul>
-    <div class="vazio" id="vazio" hidden>
-      <div class="vazio-icone" aria-hidden="true">🔍</div>
-      <h2>Nenhum imóvel encontrado</h2>
-      <p>Tente remover alguns filtros ou buscar por outro bairro.</p>
-      <button type="button" class="btn-pri" id="vazio-limpar">Limpar filtros</button>
-    </div>
-    <div class="mais">
-      <button type="button" class="btn-sec" id="carregar-mais" hidden>Carregar mais</button>
-      <div id="sentinela" aria-hidden="true"></div>
-    </div>
-  </main>
+  <button type="button" class="fab" id="abrir-filtros" aria-controls="painel" aria-expanded="false">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    <span>Filtros</span><span class="contador" id="n-filtros" hidden>0</span>
+  </button>
 
   <footer class="rodape">
     <div class="wrap">

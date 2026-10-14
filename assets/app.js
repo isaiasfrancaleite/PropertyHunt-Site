@@ -80,7 +80,6 @@
   });
 
   preencher($('f-cidade'), unicos('cidade'));
-  preencher($('f-source'), unicos('source'));
 
   // ── Tipo chips (multi-select) ──────────────────────────────
   var chipsBox = $('f-tipos');
@@ -520,49 +519,194 @@
   }
 
   // ── Filtering ──────────────────────────────────────────────
-  function contarFiltrosPainel() {
+  var ORDENS = [['preco-asc', 'Menor preço'], ['preco-desc', 'Maior preço'], ['recentes', 'Mais recentes']];
+  var FAIXAS = {
+    venda: [['Até 300 mil', 0, 300000], ['300–500 mil', 300000, 500000], ['500 mil–1 mi', 500000, 1000000], ['1 mi+', 1000000, 0]],
+    aluguel: [['Até R$ 1.500', 0, 1500], ['1.500–3.000', 1500, 3000], ['3.000–5.000', 3000, 5000], ['5.000+', 5000, 0]]
+  };
+  var QUARTOS = [[0, 'Qualquer'], [1, '1+'], [2, '2+'], [3, '3+'], [4, '4+']];
+  estado.quartos = 0;
+  estado.agencias = {};
+  estado.ordem = ORDEM_PADRAO;
+
+  todos.forEach(function (i) {
+    var m = /(\d+)\s*(?:quartos?|dormit|dorms?\b|qts?\b|su[ií]tes?)/i.exec(i.titulo || '');
+    i._q = m ? parseInt(m[1], 10) : 0;
+    i._bairro = normalizar(i.bairro);
+  });
+  if (!todos.some(function (i) { return i._q > 0; })) $('grupo-quartos').hidden = true;
+  unicos('bairro').forEach(function (b) { var o = document.createElement('option'); o.value = b; $('dl-bairros').appendChild(o); });
+
+  function digitos(v) { return String(v || '').replace(/\D/g, ''); }
+  function reais(id) { var d = digitos($(id).value); return d ? parseInt(d, 10) : NaN; }
+  function setReais(id, n) { $(id).value = n > 0 ? n.toLocaleString('pt-BR') : ''; }
+  function formatarCampo(ev) {
+    var inp = ev.target, d = digitos(inp.value);
+    inp.value = d ? parseInt(d, 10).toLocaleString('pt-BR') : '';
+  }
+
+  function opcao(box, rotulo, ativo, onClick, extraCls) {
+    var b = el('button', 'opcao' + (extraCls ? ' ' + extraCls : ''), rotulo);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!ativo));
+    b.addEventListener('click', onClick);
+    box.appendChild(b);
+    return b;
+  }
+  function faixasAtuais() { return FAIXAS[transacaoAtual() === 'aluguel' ? 'aluguel' : 'venda']; }
+  function desenharOpcoes() {
+    var fx = $('f-faixas'); fx.textContent = '';
+    var mn = reais('f-min'), mx = reais('f-max');
+    faixasAtuais().forEach(function (f) {
+      var on = (f[1] ? mn === f[1] : isNaN(mn)) && (f[2] ? mx === f[2] : isNaN(mx));
+      opcao(fx, f[0], on, function () {
+        if (on) { setReais('f-min', 0); setReais('f-max', 0); } else { setReais('f-min', f[1]); setReais('f-max', f[2]); }
+        aplicar();
+      });
+    });
+    var qb = $('f-quartos'); qb.textContent = '';
+    QUARTOS.forEach(function (q) { opcao(qb, q[1], estado.quartos === q[0], function () { estado.quartos = q[0]; aplicar(); }); });
+    var ob = $('f-ordens'); ob.textContent = '';
+    ORDENS.forEach(function (o) { opcao(ob, o[1], estado.ordem === o[0], function () { estado.ordem = o[0]; aplicar(); }); });
+  }
+  var contAg = {};
+  todos.forEach(function (i) { contAg[i.source] = (contAg[i.source] || 0) + 1; });
+  function desenharAgencias() {
+    var ab = $('f-agencias'); ab.textContent = '';
+    Object.keys(contAg).sort(function (a, b) { return nomeAg(a).localeCompare(nomeAg(b), 'pt-BR'); }).forEach(function (s) {
+      opcao(ab, nomeAg(s), !!estado.agencias[s], function () {
+        if (estado.agencias[s]) delete estado.agencias[s]; else estado.agencias[s] = true;
+        aplicar();
+      }, 'opcao-ag');
+    });
+  }
+  function nomeAg(s) { var a = AGENCIAS[s]; return (a && a.nome) || s; }
+
+  function filtrosPainel() {
     var n = 0;
-    if ($('f-min').value) n++;
-    if ($('f-max').value) n++;
+    if (!isNaN(reais('f-min')) || !isNaN(reais('f-max'))) n++;
+    if (estado.quartos) n++;
     if ($('f-cidade').value) n++;
-    if ($('f-source').value) n++;
-    if ($('f-ordem').value !== ORDEM_PADRAO) n++;
+    if ($('f-bairro').value.trim()) n++;
+    n += Object.keys(estado.agencias).length;
+    if (estado.ordem !== ORDEM_PADRAO) n++;
     if ($('f-indisp').checked) n++;
-    var c = $('n-filtros');
-    c.textContent = n;
-    c.hidden = n === 0;
+    return n;
+  }
+
+  // ── URL hash (shareable filters) ──────────────────────────
+  function lerHash() {
+    var h = (location.hash || '').replace(/^#/, '');
+    if (!h) return;
+    var p = {};
+    h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); });
+    if ('t' in p) {
+      var v = p.t === 'todos' ? '' : p.t;
+      var r = document.querySelector('input[name="transacao"][value="' + (v === 'aluguel' || v === 'venda' ? v : '') + '"]');
+      if (r) r.checked = true;
+    }
+    if ('tp' in p) { estado.tipos = {}; p.tp.split(',').forEach(function (t) { if (ROTULOS[t]) estado.tipos[t] = true; }); }
+    if (p.q) $('f-texto').value = p.q;
+    if (p.min) setReais('f-min', parseInt(p.min, 10));
+    if (p.max) setReais('f-max', parseInt(p.max, 10));
+    if (p.qt) estado.quartos = Math.min(4, parseInt(p.qt, 10) || 0);
+    if (p.c) $('f-cidade').value = p.c;
+    if (p.b) $('f-bairro').value = p.b;
+    if (p.ag) p.ag.split(',').forEach(function (s) { if (contAg[s]) estado.agencias[s] = true; });
+    if (p.o && ORDENS.some(function (o) { return o[0] === p.o; })) estado.ordem = p.o;
+    if (p.i === '1') $('f-indisp').checked = true;
+  }
+  function escreverHash() {
+    var p = [];
+    var add = function (k, v) { if (v !== '' && v != null) p.push(k + '=' + encodeURIComponent(v)); };
+    var t = transacaoAtual();
+    if (t !== 'venda') add('t', t || 'todos');
+    var tp = Object.keys(estado.tipos).sort().join(',');
+    if (tp !== 'casa') add('tp', tp || 'todos');
+    add('q', $('f-texto').value.trim());
+    var mn = reais('f-min'), mx = reais('f-max');
+    if (!isNaN(mn)) add('min', mn);
+    if (!isNaN(mx)) add('max', mx);
+    if (estado.quartos) add('qt', estado.quartos);
+    add('c', $('f-cidade').value);
+    add('b', $('f-bairro').value.trim());
+    add('ag', Object.keys(estado.agencias).sort().join(','));
+    if (estado.ordem !== ORDEM_PADRAO) add('o', estado.ordem);
+    if ($('f-indisp').checked) add('i', '1');
+    var h = p.length ? '#' + p.join('&') : '';
+    if (h !== location.hash && history.replaceState) history.replaceState(null, '', location.pathname + location.search + h);
+  }
+
+  // ── Active filter pills ───────────────────────────────────
+  function desenharPills() {
+    var box = $('pills'); box.textContent = '';
+    function pill(txt, remover, cls) {
+      var b = el('button', 'pill' + (cls ? ' ' + cls : ''));
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Remover filtro ' + txt);
+      b.appendChild(el('span', null, txt));
+      var x = el('span', 'x'); x.innerHTML = SVG_CLOSE; b.appendChild(x);
+      b.addEventListener('click', function () { remover(); aplicar(); });
+      box.appendChild(b);
+    }
+    Object.keys(estado.tipos).forEach(function (t) { pill(ROTULOS[t] || t, function () { delete estado.tipos[t]; }, 'pill-' + t); });
+    var q = $('f-texto').value.trim(); if (q) pill('“' + q + '”', function () { $('f-texto').value = ''; });
+    var mn = reais('f-min'), mx = reais('f-max');
+    if (!isNaN(mn) || !isNaN(mx)) {
+      var f = function (n) { return 'R$ ' + n.toLocaleString('pt-BR'); };
+      pill(!isNaN(mn) && !isNaN(mx) ? f(mn) + ' – ' + f(mx) : !isNaN(mn) ? 'A partir de ' + f(mn) : 'Até ' + f(mx),
+        function () { setReais('f-min', 0); setReais('f-max', 0); });
+    }
+    if (estado.quartos) pill(estado.quartos + '+ quartos', function () { estado.quartos = 0; });
+    if ($('f-cidade').value) pill($('f-cidade').value, function () { $('f-cidade').value = ''; });
+    var b = $('f-bairro').value.trim(); if (b) pill(b, function () { $('f-bairro').value = ''; });
+    Object.keys(estado.agencias).forEach(function (s) { pill(nomeAg(s), function () { delete estado.agencias[s]; }); });
+    if (estado.ordem !== ORDEM_PADRAO) {
+      var r = ORDENS.filter(function (o) { return o[0] === estado.ordem; })[0];
+      pill(r ? r[1] : estado.ordem, function () { estado.ordem = ORDEM_PADRAO; });
+    }
+    if ($('f-indisp').checked) pill('Com indisponíveis', function () { $('f-indisp').checked = false; });
+    if (box.children.length > 1) {
+      var l = el('button', 'pill-limpar', 'Limpar tudo'); l.type = 'button';
+      l.addEventListener('click', limpar); box.appendChild(l);
+    }
+    box.hidden = box.children.length === 0;
   }
 
   function aplicar() {
     var texto = normalizar($('f-texto').value.trim());
     var transacao = transacaoAtual();
     var cidade = $('f-cidade').value;
-    var source = $('f-source').value;
-    var min = parseFloat($('f-min').value);
-    var max = parseFloat($('f-max').value);
-    var ordem = $('f-ordem').value;
+    var bairro = normalizar($('f-bairro').value.trim());
+    var mult = 100; // preço em centavos
+    var min = reais('f-min'), max = reais('f-max');
     var tipos = estado.tipos;
     var algumTipo = Object.keys(tipos).length > 0;
+    var ags = estado.agencias, algumaAg = Object.keys(ags).length > 0;
     var mostrarIndisp = $('f-indisp').checked;
     var ocultos = 0;
 
-    // Base = everything except the tipo filter (used for chip counts)
     var base = todos.filter(function (i) {
       if (transacao && i.transacao !== transacao) return false;
       if (texto && i._busca.indexOf(texto) < 0) return false;
       if (cidade && i.cidade !== cidade) return false;
-      if (source && i.source !== source) return false;
-      if (!isNaN(min) && (i.preco == null || i.preco < min * 100)) return false;
-      if (!isNaN(max) && (i.preco == null || i.preco > max * 100)) return false;
+      if (bairro && i._bairro.indexOf(bairro) < 0) return false;
+      if (algumaAg && !ags[i.source]) return false;
+      if (estado.quartos && i._q < estado.quartos) return false;
+      if (!isNaN(min) && (i.preco == null || i.preco < min * mult)) return false;
+      if (!isNaN(max) && (i.preco == null || i.preco > max * mult)) return false;
       if (!mostrarIndisp && indisponivel(i)) { ocultos++; return false; }
       return true;
     });
     var lista = algumTipo ? base.filter(function (i) { return tipos[i.tipo]; }) : base.slice();
-
-    lista.sort(comparador(ordem));
+    lista.sort(comparador(estado.ordem));
 
     atualizarChips(base);
-    contarFiltrosPainel();
+    desenharOpcoes();
+    desenharAgencias();
+    desenharPills();
+    var n = filtrosPainel();
+    var c = $('n-filtros'); c.textContent = n; c.hidden = n === 0;
 
     estado.filtrados = lista;
     estado.mostrados = 0;
@@ -582,17 +726,18 @@
       cont.appendChild(oc);
     }
     $('vazio').hidden = lista.length > 0;
-    $('ver-resultados').textContent = 'Ver ' + lista.length.toLocaleString('pt-BR') + ' imóveis';
+    $('ver-resultados').textContent = 'Ver ' + lista.length.toLocaleString('pt-BR') + (lista.length === 1 ? ' imóvel' : ' imóveis');
+    escreverHash();
   }
 
   var timer;
-  function aplicarDepois() { clearTimeout(timer); timer = setTimeout(aplicar, 150); }
+  function aplicarDepois() { clearTimeout(timer); timer = setTimeout(aplicar, 200); }
 
-  // ── Panel (bottom sheet / side sheet) ──────────────────────
+  // ── Panel: bottom sheet on mobile, sticky sidebar on desktop ──
   var painel = $('painel'), fundo = $('fundo'), abrir = $('abrir-filtros');
+  var desktop = window.matchMedia('(min-width: 1024px)');
   function abrirPainel() {
     painel.classList.add('aberto');
-    painel.setAttribute('aria-hidden', 'false');
     abrir.setAttribute('aria-expanded', 'true');
     fundo.hidden = false;
     document.body.classList.add('travado');
@@ -600,48 +745,58 @@
   }
   function fecharPainel() {
     painel.classList.remove('aberto');
-    painel.setAttribute('aria-hidden', 'true');
     abrir.setAttribute('aria-expanded', 'false');
     fundo.hidden = true;
     document.body.classList.remove('travado');
   }
   abrir.addEventListener('click', abrirPainel);
   $('fechar-filtros').addEventListener('click', fecharPainel);
-  $('ver-resultados').addEventListener('click', function () { fecharPainel(); abrir.focus(); });
+  $('ver-resultados').addEventListener('click', function () {
+    fecharPainel();
+    var top = $('conteudo').getBoundingClientRect().top + window.scrollY - 140;
+    if (window.scrollY > top) window.scrollTo(0, Math.max(0, top));
+  });
   fundo.addEventListener('click', fecharPainel);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && painel.classList.contains('aberto')) fecharPainel(); });
+  (desktop.addEventListener ? desktop.addEventListener.bind(desktop, 'change') : desktop.addListener.bind(desktop))(function () { if (desktop.matches) fecharPainel(); });
 
   function limpar() {
-    $('filtros').reset(); // restores Venda + Menor preço + indisponíveis off (HTML defaults)
-    $('f-ordem').value = ORDEM_PADRAO;
+    $('filtros').reset();
     estado.tipos = copiar(TIPOS_PADRAO);
+    estado.quartos = 0;
+    estado.agencias = {};
+    estado.ordem = ORDEM_PADRAO;
     aplicar();
   }
 
   $('f-texto').addEventListener('input', aplicarDepois);
-  ['f-cidade', 'f-source', 'f-ordem', 'f-indisp'].forEach(function (id) { $(id).addEventListener('change', aplicar); });
-  ['f-min', 'f-max'].forEach(function (id) { $(id).addEventListener('input', aplicarDepois); });
+  $('f-bairro').addEventListener('input', aplicarDepois);
+  ['f-cidade', 'f-indisp'].forEach(function (id) { $(id).addEventListener('change', aplicar); });
+  ['f-min', 'f-max'].forEach(function (id) {
+    $(id).addEventListener('input', function (ev) { formatarCampo(ev); aplicarDepois(); });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('input[name="transacao"]'), function (r) {
-    r.addEventListener('change', aplicar);
+    r.addEventListener('change', function () { setReais('f-min', 0); setReais('f-max', 0); aplicar(); });
   });
   $('f-limpar').addEventListener('click', limpar);
   $('vazio-limpar').addEventListener('click', limpar);
   $('carregar-mais').addEventListener('click', renderizarMais);
+  window.addEventListener('hashchange', function () { estado.tipos = copiar(TIPOS_PADRAO); estado.quartos = 0; estado.agencias = {}; estado.ordem = ORDEM_PADRAO; $('filtros').reset(); lerHash(); aplicar(); });
 
-  // Infinite loading when the sentinel approaches the viewport
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entradas) {
       if (entradas[0].isIntersecting && estado.mostrados < estado.filtrados.length) renderizarMais();
     }, { rootMargin: '600px 0px' }).observe($('sentinela'));
   }
 
-  // Sticky bar shadow once scrolled
+  // Sticky bar compacts once scrolled
   var barra = $('barra');
   window.addEventListener('scroll', function () {
-    barra.classList.toggle('rolou', window.scrollY > 120);
+    var r = window.scrollY > 120;
+    barra.classList.toggle('rolou', r);
+    document.body.classList.toggle('rolou', r);
   }, { passive: true });
 
-  // Header summary
   var nVenda = todos.filter(function (i) { return i.transacao !== 'aluguel'; }).length;
   $('resumo').textContent = nVenda.toLocaleString('pt-BR') + ' à venda · ' +
     (todos.length - nVenda).toLocaleString('pt-BR') + ' para alugar · Indaiatuba e região';
@@ -649,5 +804,6 @@
     $('atualizado').textContent = 'Atualizado em ' + new Date(data.geradoEm).toLocaleString('pt-BR');
   }
 
+  lerHash();
   aplicar();
 })();
