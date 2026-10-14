@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Histórico de coletas — PropertyHunt</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+  <header class="topo">
+    <div class="wrap topo-inner">
+      <div class="marca">
+        <span class="logo" aria-hidden="true">⌂</span>
+        <div>
+          <h1>PropertyHunt</h1>
+          <p class="sub">Histórico de coletas</p>
+        </div>
+      </div>
+      <div class="topo-extra"><nav class="abas-topo" aria-label="Seções"><a href="./index.html">Imóveis</a><a href="./historico.html" class="ativa" aria-current="page">Histórico</a></nav><div class="carimbos"><span>Site gerado em <b>14/10/2026 14:23</b></span><span>Última coleta: <b>14/10/2026 13:14</b></span></div></div>
+    </div>
+  </header>
+  <main class="wrap conteudo hist">
+    <div class="hist-resumo" id="hist-resumo"></div>
+    <ol class="hist-lista" id="hist-lista"></ol>
+    <p class="vazio-hist" id="hist-vazio" hidden>Nenhuma coleta registrada ainda.</p>
+  </main>
+  <footer class="rodape"><div class="wrap"><p>Mostrando as últimas 100 coletas, mais recentes primeiro.</p></div></footer>
+  <noscript><p class="wrap">Ative o JavaScript para ver o histórico.</p></noscript>
+  <script src="./data/historico.js"></script>
+  <script src="./assets/historico.js"></script>
+</body>
+</html>
