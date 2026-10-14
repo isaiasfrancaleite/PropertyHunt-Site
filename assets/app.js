@@ -643,7 +643,7 @@
     h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); });
     if ('t' in p) {
       var v = p.t === 'todos' ? '' : p.t;
-      var r = document.querySelector('input[name="transacao"][value="' + (v === 'aluguel' || v === 'venda' ? v : '') + '"]');
+      var r = (v === '' || v === 'aluguel' || v === 'venda') && document.querySelector('input[name="transacao"][value="' + v + '"]');
       if (r) r.checked = true;
     }
     if ('tp' in p) { estado.tipos = {}; p.tp.split(',').forEach(function (t) { if (ROTULOS[t]) estado.tipos[t] = true; }); }
@@ -736,7 +736,7 @@
       if (estado.quartos && i._q < estado.quartos) return false;
       if (!isNaN(min) && (i.preco == null || i.preco < min * mult)) return false;
       if (!isNaN(max) && (i.preco == null || i.preco > max * mult)) return false;
-      if (!mostrarIndisp && indisponivel(i)) { ocultos++; return false; }
+      if (!mostrarIndisp && indisponivel(i)) { if (!algumTipo || tipos[i.tipo]) ocultos++; return false; }
       return true;
     });
     var lista = algumTipo ? base.filter(function (i) { return tipos[i.tipo]; }) : base.slice();

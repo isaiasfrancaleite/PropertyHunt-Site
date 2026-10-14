@@ -22,7 +22,6 @@
   var ciclos = H.ciclos || [];
   document.getElementById('hist-vazio').hidden = ciclos.length > 0;
   var r = document.getElementById('hist-resumo');
-  r.appendChild(el('div', 'hist-kpi', '')).innerHTML = '';
   r.innerHTML = '';
   [['Coletas registradas', n(ciclos.length)], ['Última coleta', ciclos[0] ? data(ciclos[0].concluido_em) : '—'], ['Site gerado em', data(H.geradoEm)]].forEach(function (k) {
     var b = el('div', 'hist-kpi'); b.appendChild(el('span', 'kpi-rot', k[0])); b.appendChild(el('strong', null, k[1])); r.appendChild(b);
