@@ -608,3 +608,12 @@ body.travado .fab { display: none; }
 @media (min-width: 1280px) { .grade { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1360px) { .grade { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1600px) { .grade { grid-template-columns: repeat(4, 1fr); } }
+
+/* Carousel arrows: always visible on desktop, above the card link */
+.foto { z-index: 2; user-select: none; -webkit-user-select: none; }
+.foto:focus-visible { outline: 3px solid var(--primaria); outline-offset: -3px; }
+.foto img { -webkit-user-drag: none; }
+.car-btn { display: inline-flex; width: 38px; height: 38px; background: rgba(11,27,58,.42); opacity: .85; transition: background .15s, opacity .15s, transform .15s; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.foto:hover .car-btn, .foto:focus-within .car-btn { opacity: 1; background: rgba(11,27,58,.62); }
+.car-btn:hover { background: rgba(11,27,58,.88) !important; transform: translateY(-50%) scale(1.08); }
+.car-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

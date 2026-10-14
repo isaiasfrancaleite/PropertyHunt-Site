@@ -300,6 +300,46 @@
     });
   }
 
+  // Desktop navigation: keyboard arrows, mouse drag, trackpad horizontal swipe
+  function ligarNavegacaoFoto(foto) {
+    function ir(dir) {
+      var btn = foto.querySelector(dir > 0 ? '.car-next' : '.car-prev');
+      if (btn) { btn.click(); return true; }
+      return false;
+    }
+    foto.tabIndex = 0;
+    foto.setAttribute('role', 'group');
+    foto.setAttribute('aria-label', 'Fotos do imóvel (use as setas para navegar)');
+    foto.addEventListener('keydown', function (ev) {
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+        if (ir(ev.key === 'ArrowRight' ? 1 : -1)) ev.preventDefault();
+      }
+    });
+    var px = null, arrastou = false;
+    foto.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType !== 'mouse' || ev.button !== 0 || ev.target.closest('.car-btn')) return;
+      px = ev.clientX; arrastou = false;
+    });
+    foto.addEventListener('pointerup', function (ev) {
+      if (px === null) return;
+      var dx = ev.clientX - px; px = null;
+      if (Math.abs(dx) > 40) { ir(dx < 0 ? 1 : -1); arrastou = true; setTimeout(function () { arrastou = false; }, 400); }
+    });
+    foto.addEventListener('click', function (ev) {
+      if (arrastou) { arrastou = false; ev.preventDefault(); ev.stopPropagation(); }
+    }, true);
+    foto.addEventListener('dragstart', function (ev) { ev.preventDefault(); });
+    var acc = 0, bloqueio = 0;
+    foto.addEventListener('wheel', function (ev) {
+      if (Math.abs(ev.deltaX) <= Math.abs(ev.deltaY)) return;
+      ev.preventDefault();
+      var agora = Date.now();
+      if (agora < bloqueio) return;
+      acc += ev.deltaX;
+      if (Math.abs(acc) > 50) { ir(acc > 0 ? 1 : -1); acc = 0; bloqueio = agora + 450; }
+    }, { passive: false });
+  }
+
   function montarCarrossel(i, fotosWrap, inicio) {
     if ((i.nImg || 0) > 1 && !(window.__PH_GAL__ && window.__PH_GAL__[i.id])) {
       return montarCapa(i, fotosWrap);
@@ -439,6 +479,7 @@
 
     var foto = el('div', 'foto');
     montarCarrossel(i, foto);
+    ligarNavegacaoFoto(foto);
     var etq = el('div', 'etiquetas');
     etq.appendChild(el('span', 'etq ' + (aluguel ? 'etq-aluguel' : 'etq-venda'), aluguel ? 'Aluguel' : 'Venda'));
     etq.appendChild(el('span', 'etq', ROTULOS[i.tipo] || 'Outros'));
