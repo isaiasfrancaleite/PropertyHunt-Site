@@ -242,6 +242,13 @@
     return cover ? [cover] : [];
   }
 
+  /** Broken photo → hide img and show the "Sem foto" placeholder instead of the browser's broken icon. */
+  function fotoFalhou(im) {
+    im.classList.add('carregada', 'falhou');
+    var slide = im.parentNode;
+    if (slide && !slide.querySelector('.sem-foto')) slide.appendChild(el('span', 'sem-foto', 'Foto indisponível'));
+  }
+
   var shardsCarregando = {};
   /** Loads data/g/<k>.js (script tag → works on file://) then calls cb. */
   function carregarGaleria(i, cb) {
@@ -267,7 +274,8 @@
     if (cover) {
       var im = el('img');
       im.alt = i.titulo; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.loading = 'lazy';
-      im.onload = im.onerror = function () { im.classList.add('carregada'); fotosWrap.classList.add('ok'); };
+      im.onload = function () { im.classList.add('carregada'); fotosWrap.classList.add('ok'); };
+      im.onerror = function () { fotoFalhou(im); fotosWrap.classList.add('ok'); };
       im.src = cover;
       slide.appendChild(im);
     } else fotosWrap.classList.add('ok');
@@ -375,10 +383,11 @@
         im.loading = 'eager';
         im.src = src;
         im.onload = function () { im.classList.add('carregada'); fotosWrap.classList.add('ok'); };
-        im.onerror = function () { im.classList.add('carregada'); fotosWrap.classList.add('ok'); };
+        im.onerror = function () { fotoFalhou(im); fotosWrap.classList.add('ok'); };
       } else {
         im.loading = 'lazy';
-        im.onload = im.onerror = function () { im.classList.add('carregada'); };
+        im.onload = function () { im.classList.add('carregada'); };
+        im.onerror = function () { fotoFalhou(im); };
       }
       slide.appendChild(im);
       track.appendChild(slide);
@@ -640,7 +649,7 @@
     var h = (location.hash || '').replace(/^#/, '');
     if (!h) return;
     var p = {};
-    h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); });
+    h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) try { p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); } catch (e) { /* malformed hash part: ignore */ } });
     if ('t' in p) {
       var v = p.t === 'todos' ? '' : p.t;
       var r = (v === '' || v === 'aluguel' || v === 'venda') && document.querySelector('input[name="transacao"][value="' + v + '"]');

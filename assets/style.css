@@ -617,3 +617,16 @@ body.travado .fab { display: none; }
 .foto:hover .car-btn, .foto:focus-within .car-btn { opacity: 1; background: rgba(11,27,58,.62); }
 .car-btn:hover { background: rgba(11,27,58,.88) !important; transform: translateY(-50%) scale(1.08); }
 .car-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* review fixes */
+.car-slide img.falhou { display: none; }
+.car-slide .sem-foto { background: #e2e8f0; color: #64748b; }
+#ver-resultados { white-space: nowrap; }
+@media (max-width: 600px) {
+  .hist-resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+}
+@media (max-width: 600px) {
+  .hist-kpi { padding: 10px 12px; }
+  .hist-kpi .kpi-rot { font-size: .7rem; }
+  .hist-kpi strong { font-size: .95rem; line-height: 1.25; }
+}
