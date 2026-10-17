@@ -205,6 +205,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .fonte { font-weight: 600; text-transform: capitalize; }
 .ver { color: var(--primaria); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .ver svg { width: 14px; height: 14px; }
+a.ver { position: relative; z-index: 2; text-decoration: none; min-height: 32px; padding: 4px 0; border-radius: 6px; }
+a.ver:hover { text-decoration: underline; }
+a.ver:focus-visible { outline: 3px solid var(--primaria); outline-offset: 2px; }
 
 .vazio { text-align: center; padding: 56px 16px; background: #fff; border-radius: var(--raio); box-shadow: var(--sombra); }
 .vazio-icone { font-size: 44px; width: 88px; height: 88px; display: grid; place-items: center; margin: 0 auto 12px; border-radius: 50%; background: var(--primaria-clara); }

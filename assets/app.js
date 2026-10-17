@@ -525,7 +525,13 @@
     var rod = el('div', 'rodape-card');
     rod.appendChild(el('span', 'fonte', nomeAgencia(i)));
     if (url) {
-      var ver = el('span', 'ver', 'Ver anúncio');
+      // Only this explicit link opens the agency's official listing (new tab);
+      // clicking elsewhere on the card does nothing.
+      var ver = el('a', 'ver', 'Ver anúncio');
+      ver.href = url;
+      ver.target = '_blank';
+      ver.rel = 'noopener noreferrer';
+      ver.setAttribute('aria-label', 'Ver anúncio: ' + i.titulo + ' — ' + preco.textContent + ' (abre o site da imobiliária em nova aba)');
       ver.insertAdjacentHTML('beforeend', SVG_SETA);
       rod.appendChild(ver);
     }
@@ -543,15 +549,6 @@
     if (url) base.appendChild(acoesCompartilhar(i, url, preco.textContent));
     corpo.appendChild(base);
     li.appendChild(corpo);
-
-    if (url) {
-      var a = el('a', 'cobrir');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.setAttribute('aria-label', i.titulo + ' — ' + preco.textContent + ' (abre o anúncio original)');
-      li.appendChild(a);
-    }
     return li;
   }
 
